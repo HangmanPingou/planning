@@ -1,1 +1,2 @@
 A la base, j'ai fait une reconversion en tant que DATA ANALYST. Le problème que je constate actuellement, c'est qu'il faut de l'expérience pour être embauché. Donc en attendant de trouver une solution, je travaille en intérim et j'ai eu l'idée de ce petit logiciel pour gérer mes missions.
+C'est ma première appli Tkinter, donc les commentaires sont surtout pour moi pour la suite.
