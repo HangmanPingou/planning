@@ -1,0 +1,8 @@
+Ce fichier sera mis à jour à chaque push et les versions qui ne sont pas encore sorties ne sont que des idées futures.
+
+1.00 : ne pas tenir compte de l'esthétique car j'ai fait différents essais notamment pour apprendre à bien gérer les frames ni de ce qui s'affiche dans le terminal, ce sera retiré par la suite.
+
+1.01 : refonte totale du visuelle.
+
+1.02 : ajout des pauses non rémunérées.
+
