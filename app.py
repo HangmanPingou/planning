@@ -20,7 +20,7 @@ def fichier_planning():  # Ouverture du fichier avec création de celui-ci pour 
 
 def bouton_ajouter():
     global df
-    date_selec = (datetime.strptime(calendrier.get_date(), "%m/%d/%y")).date()  # Récupère la sélection avec get_date, transforme la str en datetime puis juste en date.
+    date_selec = pd.to_datetime(calendrier.get_date(), format="%m/%d/%y").normalize() # Le normalize mets les heures à 00:00 mais pandas ne gère pas de date mais du datetime.
     heure_deb = int(spin_heures_deb.get()) # Récupère l'heure de début et la transforme en entier, un spin renvoi un string.
     minutes_deb = int(spin_minutes_deb.get())
     horaire_debut = datetime(25, 1, 1, heure_deb, minutes_deb)  # Crée un objet datetime avec une date arbitraire car il faut une date.
@@ -40,6 +40,7 @@ def bouton_ajouter():
                                       'lieu': lieu,
                                       "duree": duree}])
     df = pd.concat([df, nouvelle_mission], ignore_index=True)  # Concataine les deux dataframe.
+    df = df.sort_values(by="date") # Trie par ordre de date de la mission et non par ordre d'entrée.
     df.to_parquet("planning.parquet", index= False)
 
 def mois_precedent(): # Calcul du mois précédent. Pas de timedelta month - 1 donc petite magouille.
@@ -53,10 +54,19 @@ def traduction_mois(nombre):  # Evite de passer par des langues locales, ce qui 
                     "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
     return mois_francais[nombre - 1]
 
+def calculer_duree_mois(df, mois, annee):
+    filtre = (df["date"].dt.month == mois) & (df["date"].dt.year == annee)
+    df_filtre = df.loc[filtre]
+    duree_totale_mois = df_filtre["duree"].sum()
+    duree_totale_seconde = int(duree_totale_mois.total_seconds())
+    heures_totale_mois = int(duree_totale_seconde // 3600)
+    minutes_totale_mois = int((duree_totale_seconde % 3600) // 60)
+    return f"{heures_totale_mois:02d} h {minutes_totale_mois:02d} min"
 
 df = fichier_planning()
 print(df.dtypes)
 print(df)
+print(mois_precedent())
 
 # Choix du thème.
 couleur_fond = "#2e2e2e"
@@ -93,9 +103,19 @@ lb_titre.pack(pady= (20, 10))
 lb_mois_dernier = Label(frame_gauche, text= f"Heures du mois {"d'" if traduction_mois(mois_precedent().month) == "octobre" else "de"}{traduction_mois(mois_precedent().month)} {mois_precedent().year} :",
                         font= police_texte, bg= couleur_cadre, fg= couleur_texte)
 lb_mois_dernier.pack(pady= 10)
+if mois_precedent() == 12: # Ajoute le changement d'année. A vérifier que celà fonctionne en janvier.
+    annee = date.today().year - timedelta(days= 365)
+else:
+    annee = date.today().year
+lb__heures_mois_precedent = Label(frame_gauche, text= f"{calculer_duree_mois(df, mois_precedent().month, annee)}",
+                              font= police_texte, bg= couleur_cadre, fg= couleur_texte)
+lb__heures_mois_precedent.pack(pady= 1)
 lb_mois_actuel = Label(frame_gauche, text= f"Heures du mois {"d'" if traduction_mois(date.today().month) == "octobre" else "de"} {traduction_mois(date.today().month)} {date.today().year} :",
                        font= police_texte, bg= couleur_cadre, fg= couleur_texte)
 lb_mois_actuel.pack(pady= 10)
+lb_heures_mois_actuel = Label(frame_gauche, text= f"{calculer_duree_mois(df, date.today().month, date.today().year)}",
+                              font= police_texte, bg= couleur_cadre, fg= couleur_texte)
+lb_heures_mois_actuel.pack(pady= 1)
 
 # ZONE DE DROITE.
     # Calendrier.

@@ -4,5 +4,8 @@ Ce fichier sera mis à jour à chaque push et les versions qui ne sont pas encor
 
 1.01 : refonte totale du visuelle.
 
-1.02 : ajout des pauses non rémunérées.
+1.02 : affichage des heures faites pour le mois précédent et le mois en cours. Correction d'un bug qui ne gardait pas le format datetime64 dans le datframe.
+Ajout du changement dernier pour le mois de janvier. A vérifier en conditions réelles si celà fonctionne. MAJ en cours...
+
+1.03: ajout des pauses non rémunérées.
 
