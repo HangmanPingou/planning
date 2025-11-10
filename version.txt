@@ -7,5 +7,8 @@ Ce fichier sera mis à jour à chaque push et les versions qui ne sont pas encor
 1.02 : affichage des heures faites pour le mois précédent et le mois en cours. Correction d'un bug qui ne gardait pas le format datetime64 dans le datframe.
 Ajout du changement d'année pour le mois de janvier. A vérifier en conditions réelles si celà fonctionne. MAJ en cours... Mise en ordre chronologique du dataframe lors de l'insertion d'une nouvelle mission.
 
-1.03: ajout des pauses non rémunérées.
+1.03 : ajout de la fonction effacer une mission mal enregistrée, et oui les tests donnent des idées ;)
 
+1.04: ajout des pauses non rémunérées.
+
+1.05: gestion des heures de nuit quand c'est le dernier jour du mois, je dois me renseigner sur la législation pour savoir comment sont gérées les heures du "nouveau mois".
