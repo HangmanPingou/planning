@@ -42,6 +42,8 @@ def bouton_ajouter():
     df = pd.concat([df, nouvelle_mission], ignore_index=True)  # Concataine les deux dataframe.
     df = df.sort_values(by="date") # Trie par ordre de date de la mission et non par ordre d'entrée.
     df.to_parquet("planning.parquet", index= False)
+    lb__heures_mois_precedent.configure(text= f"{calculer_duree_mois(df, mois_precedent().month, annee)}")
+    lb_heures_mois_actuel.configure(text=  f"{calculer_duree_mois(df, date.today().month, date.today().year)}")
 
 def mois_precedent(): # Calcul du mois précédent. Pas de timedelta month - 1 donc petite magouille.
     aujourdhui = date.today()
@@ -62,6 +64,41 @@ def calculer_duree_mois(df, mois, annee):
     heures_totale_mois = int(duree_totale_seconde // 3600)
     minutes_totale_mois = int((duree_totale_seconde % 3600) // 60)
     return f"{heures_totale_mois:02d} h {minutes_totale_mois:02d} min"
+
+def window_supprimer_mission():  # Nouvelle fenêtre ouverte par le choix du menu.
+    window_suppr = Tk()
+    window_suppr.title("Suppression d'une mission.")
+    window_suppr.geometry("640x480")
+    window_suppr.config(bg= couleur_fond)
+    frame_contenair_suppr = Frame(window_suppr, bg= couleur_fond)
+    frame_contenair_suppr.pack(expand= YES, fill= "both", padx= 10, pady= 10)
+    frame_cadre = Frame(frame_contenair_suppr, bg= couleur_cadre, relief= "sunken", bd= 2)
+    frame_cadre.pack(expand= YES, fill= "both", padx= 5, pady= 5)
+    lb_titre_suppr = Label(frame_cadre, text= "Suppresion d'une mission", font= police_titre, bg= couleur_cadre, fg= couleur_texte, pady= 10)
+    lb_titre_suppr.pack(pady= (20, 10))
+    liste_affichage_suppr = ["Quelle mission ?"] + [f"{row['date'].strftime('%d/%m/%Y')} - " # Une liste de dictionnaire ne fonctionne pas à l'affichage, donc une liste plus simple.
+            f"{row['lieu']} ({row['heure_deb'].strftime('%H:%M')}→{row['heure_fin'].strftime('%H:%M')})"
+            for _, row in df.iterrows()]
+    choix_suppr = StringVar(master= window_suppr, value=liste_affichage_suppr[0]) # Le paramètre master pour bien gérer les variables internes de cette fenêtre. Le value évite de faire un .set
+    menu_suppr = OptionMenu(frame_cadre, choix_suppr, *liste_affichage_suppr)
+    menu_suppr.config(bg= couleur_bouton, fg= "white", highlightthickness= 0, activebackground= couleur_bouton_survol)
+    menu_suppr.pack(expand= YES, padx= 10)
+    btn_suppr = Button(frame_cadre, text= "Supprimer la mission", bg=couleur_bouton, fg="white", activebackground=couleur_bouton_survol,
+                command=lambda: supprimer_mission(df, choix_suppr, liste_affichage_suppr, window_suppr)) # Lance la fonction avec comme paramètres les différentes variables.
+    btn_suppr.pack(pady=10)
+    window_suppr.mainloop()
+
+def supprimer_mission(df, choix_suppr, liste_affichage_suppr, window_suppr):
+    selection = choix_suppr.get() # Récupère la sélection.
+    index = liste_affichage_suppr.index(selection) - 1 # Lindex commence à 0.
+    df.drop(df.index[index], inplace=True)  # Efface la ligne du dataframe.
+    df.to_parquet("planning.parquet", index=False)  # Enregistre la suppression.
+    df = pd.read_parquet("planning.parquet") # Remet à jour le dataframe en mémoire.
+    lb__heures_mois_precedent.configure(text= f"{calculer_duree_mois(df, mois_precedent().month, annee)}")  # Met à jour le nombre d'heure.
+    lb_heures_mois_actuel.configure(text=  f"{calculer_duree_mois(df, date.today().month, date.today().year)}")
+    window_suppr.destroy() # Ferme la fenêtre.
+    
+
 
 df = fichier_planning()
 print(df.dtypes)
@@ -85,6 +122,22 @@ window_principale.geometry("950x650") # Taille de la fenêtre lors de l'ouvertur
 window_principale.minsize(600, 400) # Taille minimum de la fenêtre.
 window_principale.config(bg= couleur_fond) # Couleur de fond de la fenêtre principale.
 
+# Menu.
+menu_bar = Menu(window_principale,   # Je laisse les paramètres de couleurs car celà fonctionne sous linux. Sous windows ou IOS, la barre faisant partie de l'os ne prend pas en compte les couleurs.
+                bg= couleur_fond,          # Couleur de fond du menu principal
+                fg= couleur_texte,          # Couleur du texte
+                activebackground= couleur_bouton_survol,  # Fond au survol
+                activeforeground="white",   # Texte au survol
+                relief="flat",              # Pas de bordure épaisse
+                borderwidth=0)             # Paramètre tearoff permet d'enlever des ----- à l'affichage.
+# file_menu = Menu(menu_bar, tearoff=0)  # Paramètre tearoff permet d'enlever des ----- à l'affichage.
+file_menu = Menu(menu_bar, tearoff=0, bg= couleur_cadre, fg= couleur_texte, activebackground= couleur_bouton_survol,  # Là c'est pris en compte.
+                 activeforeground="white", relief="flat", borderwidth=0)
+file_menu.add_command(label= ("Supprimer une mission"), command= window_supprimer_mission)
+file_menu.add_command(label= "Quitter", command= window_principale.quit)
+menu_bar.add_cascade(label= "Fichier", menu= file_menu)
+window_principale.config(menu= menu_bar)
+
 # Création d'une zone de travail prenant toute la place.
 frame_contenair = Frame(window_principale, bg= couleur_fond)
 frame_contenair.pack(expand= YES, fill= "both", padx= 10, pady= 10) # Expand permet d'occuper la place disponible et fill="both" force d'occuper l'espace disponible
@@ -104,7 +157,7 @@ lb_mois_dernier = Label(frame_gauche, text= f"Heures du mois {"d'" if traduction
                         font= police_texte, bg= couleur_cadre, fg= couleur_texte)
 lb_mois_dernier.pack(pady= 10)
 if mois_precedent() == 12: # Ajoute le changement d'année. A vérifier que celà fonctionne en janvier.
-    annee = date.today().year - timedelta(days= 365)
+    annee = date.today().year - timedelta(days= 365) # A tester car sinon je mets un timedelta(days= 40) mais ça fait moin propre je trouve.
 else:
     annee = date.today().year
 lb__heures_mois_precedent = Label(frame_gauche, text= f"{calculer_duree_mois(df, mois_precedent().month, annee)}",
@@ -123,7 +176,7 @@ calendrier = Calendar(frame_droite, background= couleur_accent, disabledbackgrou
                       headershackground= couleur_bouton, normalbackground= couleur_fond,
                       foreground= "white", normalforeground= "white", selectbackground= couleur_bouton_survol)
 calendrier.pack(pady= 15)
-date = calendrier.get_date()  # A mettre dans la fonction du bouton ajouter
+date_selec = calendrier.get_date()  # A mettre dans la fonction du bouton ajouter
 print(type(date))
     # Horloge.
 frame_horloge = Frame(frame_droite, bg= couleur_cadre, pady= 10)
