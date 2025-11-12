@@ -14,6 +14,8 @@ def fichier_planning():  # Ouverture du fichier avec création de celui-ci pour 
         df["heure_deb"] = pd.to_datetime(df["heure_deb"], format="%H:%M")
         df["heure_fin"] = pd.to_datetime(df["heure_fin"], format="%H:%M")
         df["duree"] = df["heure_fin"] - df["heure_deb"]
+        df["nb_heures_pause"] = pd.Series(dtype= "int64")
+        df["nb_minutes_pause"] = pd.Series(dtype= "int64")
         df.to_parquet("planning.parquet", index= False)
         print("Un nouveau fichier à été créé.")
     return df
@@ -29,7 +31,9 @@ def bouton_ajouter():
     horaire_fin = datetime(25, 1, 1, heure_fin, minutes_fin)
     if horaire_fin < horaire_debut:  # Gère si l'heure de fin est plus petite que l'heure de début, (trabail de nuit).
         horaire_fin += timedelta(days= 1)  # Ajoute 1 jour à l'horaire de fin.
-    duree = horaire_fin - horaire_debut
+    heure_pause = int(spin_heures_pause.get())
+    minutes_pause = int(spin_minutes_pause.get())
+    duree = horaire_fin - horaire_debut - timedelta(hours= heure_pause, minutes= minutes_pause)
     if choix.get() == "Autre":
         lieu = nouveau_lieu.get()
     else:
@@ -38,7 +42,9 @@ def bouton_ajouter():
                                       "heure_deb": horaire_debut,
                                       "heure_fin": horaire_fin,
                                       'lieu': lieu,
-                                      "duree": duree}])
+                                      "duree": duree,
+                                      "nb_heures_pause" : heure_pause,
+                                      "nb_minutes_pause" : minutes_pause}])
     df = pd.concat([df, nouvelle_mission], ignore_index=True)  # Concataine les deux dataframe.
     df = df.sort_values(by="date") # Trie par ordre de date de la mission et non par ordre d'entrée.
     df.to_parquet("planning.parquet", index= False)
@@ -51,7 +57,7 @@ def mois_precedent(): # Calcul du mois précédent. Pas de timedelta month - 1 d
     mois_precedent = mois_temp - timedelta(days=1)
     return mois_precedent
 
-def traduction_mois(nombre):  # Evite de passer par des langues locales, ce qui ne fonctionne pas toujours notamment avec des machines virtuelle.
+def traduction_mois(nombre):  # Evite de passer par des langues locales, ce qui ne fonctionne pas toujours notamment avec des machines virtuelles.
     mois_francais = ["janvier", "février", "mars", "avril", "mai", "juin",
                     "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
     return mois_francais[nombre - 1]
@@ -103,7 +109,6 @@ def supprimer_mission(df, choix_suppr, liste_affichage_suppr, window_suppr):
 df = fichier_planning()
 print(df.dtypes)
 print(df)
-print(mois_precedent())
 
 # Choix du thème.
 couleur_fond = "#2e2e2e"
@@ -203,11 +208,11 @@ spin_minutes_deb = Spinbox(frame_heure_deb, from_=0, to=59, wrap=True,
 spin_minutes_deb.pack(side="left", padx=2)
         # Horloge de fin.
             # Frame pour les spinbox.
-frame_horloge_droite = Frame(frame_horloge, bg= couleur_cadre)
-frame_horloge_droite.pack(side="left", padx=10)
-lb_heure_fin = Label(frame_horloge_droite, text= "Heure de fin.", bg= couleur_cadre, fg= couleur_texte, font= police_texte)
+frame_horloge_milieu = Frame(frame_horloge, bg= couleur_cadre)
+frame_horloge_milieu.pack(side="left", padx=10)
+lb_heure_fin = Label(frame_horloge_milieu, text= "Heure de fin.", bg= couleur_cadre, fg= couleur_texte, font= police_texte)
 lb_heure_fin.pack(pady= 5)
-frame_heure_fin = Frame(frame_horloge_droite, bg= couleur_accent, relief= "sunken", bd= 1)
+frame_heure_fin = Frame(frame_horloge_milieu, bg= couleur_accent, relief= "sunken", bd= 1)
 frame_heure_fin.pack(pady= 5)
             # Spinbox pour les heures (0 à 23).
 spin_heures_fin = Spinbox(frame_heure_fin, from_=0, to=23, wrap=True,
@@ -221,6 +226,26 @@ spin_minutes_fin = Spinbox(frame_heure_fin, from_=0, to=59, wrap=True,
                               width=3, font=("Courier", 18), justify="center",
                               state="readonly", format="%02.0f")
 spin_minutes_fin.pack(side="left", padx= 2)
+        # Horloge de la pause non rémunérée..
+            # Frame pour les spinbox.
+frame_horloge_droite = Frame(frame_horloge, bg= couleur_cadre)
+frame_horloge_droite.pack(side="left", padx=10)
+lb_heure_pause = Label(frame_horloge_droite, text= "Pause non rémunérée.", bg= couleur_cadre, fg= couleur_texte, font= police_texte)
+lb_heure_pause.pack(pady= 5)
+frame_heure_pause = Frame(frame_horloge_droite, bg= couleur_accent, relief= "sunken", bd= 1)
+frame_heure_pause.pack(pady= 5)
+            # Spinbox pour les heures (0 à 23).
+spin_heures_pause = Spinbox(frame_heure_pause, from_=0, to=23, wrap=True,
+                    width=3, font=("Courier", 18), justify="center",
+                    state="readonly", format="%02.0f")
+spin_heures_pause.pack(side="left", padx=2)
+            # Label séparateur.
+Label(frame_heure_pause, text=":", bg= couleur_accent,fg= couleur_texte, font=("Courier", 18)).pack(side="left")
+            # Spinbox pour les minutes (0 à 59).
+spin_minutes_pause = Spinbox(frame_heure_pause, from_=0, to=59, wrap=True,
+                              width=3, font=("Courier", 18), justify="center",
+                              state="readonly", format="%02.0f")
+spin_minutes_pause.pack(side="left", padx= 2)
     # Lieu de la mission.
 frame_lieu = Frame(frame_droite, bg= couleur_cadre)
 frame_lieu.pack(pady= 10)

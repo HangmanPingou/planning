@@ -10,7 +10,7 @@ Mise en ordre chronologique du dataframe lors de l'insertion d'une nouvelle miss
 
 1.03 : ajout d'un menu. Ajout de la fonction effacer une mission mal enregistrée. Mise à jour du nombre d'heures faites par mois quand on ajoute ou supprime une mission.
 
-1.04 : ajout des pauses non rémunérées.
+1.04 : ajout des pauses non rémunérées. Pour ceux qui ont utilisé le script avant la v 1.04, le patch V_1_04 permet de corriger le dataframe en ajoutant les pauses.
 
 1.05 : ajout de différents thèmes de couleurs.
 
